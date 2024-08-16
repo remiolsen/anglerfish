@@ -1,4 +1,6 @@
-# Anglerfish
+# Anglerfish (Outdated)
+
+# Note! Anglerfish have moved to a new repository - please see https://github.com/NationalGenomicsInfrastructure/anglerfish
 
 [![Anglerfish CI Status](https://github.com/remiolsen/anglerfish/workflows/Anglerfish/badge.svg)](https://github.com/remiolsen/anglerfish/actions)
 [![PyPI](https://img.shields.io/pypi/v/bio-anglerfish)](https://pypi.python.org/pypi/bio-anglerfish/)
