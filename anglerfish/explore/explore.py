@@ -4,11 +4,13 @@ import os
 import uuid
 from typing import cast
 
+
 import pandas as pd
 
 from anglerfish.demux.adaptor import Adaptor, load_adaptors
 from anglerfish.demux.demux import Alignment, map_reads_to_alns, run_minimap2
 from anglerfish.explore.entropy import calculate_relative_entropy
+from anglerfish.explore.clustering import cluster_indexes
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("explore")
@@ -53,6 +55,45 @@ def run_explore(
         json.dump(results, f, indent=4)
 
     log.info(f"Results saved to {explore_stats_file}")
+
+    """
+    # Cluster the indexes
+    for adaptor in adaptors_included:
+        for adaptor_end_name, adaptor_end in zip(
+            ["i5", "i7"], [adaptor.i5, adaptor.i7]
+        ):
+            if adaptor_end.has_index:
+                df_good_hits = entries[adaptor.name][adaptor_end_name]
+                if len(df_good_hits) > 0:
+                    clustered_df = cluster_indexes(df_good_hits)
+                    clustered_df.to_csv(
+                        os.path.join(
+                            outdir,
+                            f"{adaptor.name}_{adaptor_end_name}_clustered.csv",
+                        )
+                    )
+                    log.info(
+                        f"Clustered indexes saved to {adaptor.name}_{adaptor_end_name}_clustered.csv"
+                    )
+    # join the clustered files on read name
+    joined_clustered_df = None
+    for clustered_file in os.listdir(outdir):
+        if "clustered" in clustered_file:
+            df = pd.read_csv(os.path.join(outdir, clustered_file))
+            df = df.set_index("read_name")
+            if joined_clustered_df is None:
+                joined_clustered_df = df
+            else:
+                joined_clustered_df = joined_clustered_df.join(df, rsuffix="_r")
+    # find all i5-i7 combinations
+    i5_i7_combinations = joined_clustered_df[
+        joined_clustered_df["adapter_name"].str.contains("i5")
+        & joined_clustered_df["adapter_name"].str.contains("i7")
+    ]
+    i5_i7_combinations.to_csv(os.path.join(outdir, "i5_i7_combinations.csv"))
+
+    # Save the clustered files to a single file
+"""a
 
 
 def _run_explore(
@@ -195,9 +236,8 @@ def _run_explore(
                 match_col_df = match_col_df.astype({"match_1_len": "int32"})
 
                 df_good_hits.loc[match_col_df.index, match_col_df.columns] = (
-                    match_col_df
+                    match_col_df,
                 )
-
                 thres = round(adaptor_end.len_constant * good_hit_threshold)
                 df_good_hits = df_good_hits[df_good_hits["match_1_len"] >= thres]
 
